@@ -16,7 +16,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-
+# gunicorn version 20.1.0
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
 ckeditor = CKEditor(app)
@@ -165,7 +165,8 @@ def show_post(post_id):
     requested_post = BlogPost.query.get(post_id)
     if form.validate_on_submit():
         if not current_user.is_authenticated:
-            flash("Please Login posting Comments")
+            flash("Login to Comments")
+            return redirect(url_for("login"))
 
         new_comment = Comment(
             text=form.comment.data,
