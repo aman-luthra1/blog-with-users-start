@@ -39,6 +39,8 @@ gravatar = Gravatar(app,
 
 
 ##CONNECT TO DB
+app.config['SQLALCHEMY_DATABASE_URI'] = 'DATABASE_URL'
+
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///blog_1.db')
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog_1.db'
