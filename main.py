@@ -14,9 +14,11 @@ from sqlalchemy import Table, Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
+
 Base = declarative_base()
 
 # gunicorn version 20.1.0
+# psycopg2-binary version 2.9.1
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
 ckeditor = CKEditor(app)
@@ -37,7 +39,9 @@ gravatar = Gravatar(app,
 
 
 ##CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog_1.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'DATABASE_URL'
+
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog_1.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
