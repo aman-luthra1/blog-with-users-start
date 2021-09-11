@@ -1,62 +1,41 @@
-from flask import Flask, render_template, redirect, url_for, flash, request
+from flask import Flask, render_template, redirect, url_for, flash, abort
 from flask_bootstrap import Bootstrap
 from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from flask_login import UserMixin, login_user, LoginManager, login_required, current_user, logout_user
-from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from flask_gravatar import Gravatar
 from flask_ckeditor import CKEditor
 from functools import wraps
-from flask import abort
-from sqlalchemy import Table, Column, Integer, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
-import config
+from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
+import os
 
-Base = declarative_base()
 
 # gunicorn version 20.1.0
 # psycopg2-binary version 2.9.1
 app = Flask(__name__)
-# app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
-app.config['SECRET_KEY'] = config.DATABASE_URL
+app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
 
 ckeditor = CKEditor(app)
 Bootstrap(app)
-
-login_manager = LoginManager()
-login_manager.init_app(app)
-
-gravatar = Gravatar(app,
-                    size=100,
-                    rating='g',
-                    default='retro',
-                    force_default=False,
-                    force_lower=False,
-                    use_ssl=False,
-                    base_url=None)
-
+gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False, force_lower=False, use_ssl=False, base_url=None)
 
 
 ##CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = config.DATABASE_URL
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///blog_1.db')
-
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog_1.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 
-def admin_only(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.id != 1:
-            return abort(403)
-        return f(*args, **kwargs)
-    return decorated_function
+@login_manager.user_loader
+def user_loader(user_id):
+    return User.query.get(int(user_id))
 
 
 #CONFIGURE TABLES
@@ -102,6 +81,14 @@ class Comment(db.Model):
 # db.create_all()
 
 
+def admin_only(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.id != 1:
+            return abort(403)
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 @app.route('/')
 def get_all_posts():
@@ -122,7 +109,6 @@ def register():
             method='pbkdf2:sha256',
             salt_length=8
         )
-
         new_user = User(
             name=form.name.data,
             email=form.email.data,
@@ -135,10 +121,6 @@ def register():
         return redirect(url_for("get_all_posts"))
     return render_template("register.html", form=form, current_user=current_user)
 
-
-@login_manager.user_loader
-def user_loader(user_id):
-    return User.query.get(int(user_id))
 
 
 @app.route('/login', methods=["GET", "POST"])
